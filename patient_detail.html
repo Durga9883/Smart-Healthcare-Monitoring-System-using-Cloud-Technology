@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Patient Detail – Smart Healthcare Monitoring System</title>
+  <meta name="description" content="Detailed patient vitals history, health trend charts, and alert log."/>
+  <link rel="stylesheet" href="/static/css/main.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏥</div>
+      <div><h2>SmartHealth<span>Monitor</span></h2></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item" href="/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item active" href="/patients"><span class="nav-icon">🧑‍⚕️</span> Patients</a>
+      <a class="nav-item" href="/alerts"><span class="nav-icon">🚨</span> Alerts <span class="nav-badge" id="sidebar-alert-count">0</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar" id="user-avatar">A</div>
+        <div>
+          <div class="user-name" id="user-name">Loading…</div>
+          <div class="user-role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">⏻ Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/patients" class="btn btn-outline btn-sm">← Back</a>
+        <div class="header-title" id="page-title">Patient Detail</div>
+      </div>
+      <div class="header-right">
+        <div class="header-badge">
+          <span class="live-dot"></span>
+          <span id="last-updated">—</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Patient profile card -->
+      <div class="card" style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+          <div style="width:64px;height:64px;border-radius:50%;
+                      background:linear-gradient(135deg,var(--clr-primary),var(--clr-accent));
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:26px;flex-shrink:0;" id="patient-avatar">🧑</div>
+          <div style="flex:1;">
+            <h2 id="p-name" style="font-size:22px;font-weight:700;margin-bottom:4px;">—</h2>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;color:var(--txt-secondary);font-size:13px;">
+              <span id="p-id">ID: —</span>
+              <span id="p-age-gender">—</span>
+              <span id="p-blood">Blood: —</span>
+              <span id="p-contact">Contact: —</span>
+            </div>
+            <div style="margin-top:8px;font-size:13px;color:var(--txt-secondary);">
+              <strong style="color:var(--txt-primary);">Medical History: </strong><span id="p-history">—</span>
+            </div>
+          </div>
+          <div id="p-status-badge"></div>
+        </div>
+      </div>
+
+      <!-- Current vitals -->
+      <div class="grid-3" style="margin-bottom:24px;" id="vitals-cards">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">🌡️</div>
+          <div style="font-size:11px;color:var(--txt-muted);text-transform:uppercase;letter-spacing:1px;">Temperature</div>
+          <div style="font-size:32px;font-weight:700;margin:6px 0;" id="v-temp">—</div>
+          <div style="font-size:12px;color:var(--txt-muted);">°Fahrenheit</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">❤️</div>
+          <div style="font-size:11px;color:var(--txt-muted);text-transform:uppercase;letter-spacing:1px;">Heart Rate</div>
+          <div style="font-size:32px;font-weight:700;margin:6px 0;" id="v-hr">—</div>
+          <div style="font-size:12px;color:var(--txt-muted);">BPM</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">🫁</div>
+          <div style="font-size:11px;color:var(--txt-muted);text-transform:uppercase;letter-spacing:1px;">Oxygen Level</div>
+          <div style="font-size:32px;font-weight:700;margin:6px 0;" id="v-spo2">—</div>
+          <div style="font-size:12px;color:var(--txt-muted);">SpO₂ %</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:32px;margin-bottom:8px;">💉</div>
+          <div style="font-size:11px;color:var(--txt-muted);text-transform:uppercase;letter-spacing:1px;">Blood Pressure</div>
+          <div style="font-size:32px;font-weight:700;margin:6px 0;" id="v-bp">—</div>
+          <div style="font-size:12px;color:var(--txt-muted);">mmHg</div>
+        </div>
+      </div>
+
+      <!-- Trend chart -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="section-header">
+          <div class="section-title">📈 Vitals Trend (Last 20 Readings)</div>
+          <button class="btn btn-outline btn-sm" onclick="loadHistory()">↻ Refresh</button>
+        </div>
+        <div style="position:relative;height:280px;">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- History table + Alerts side by side -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title" style="margin-bottom:14px;">📋 Vitals History</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th><th>Temp</th><th>HR</th><th>SpO₂</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt-muted)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-bottom:14px;">🚨 Patient Alerts</div>
+          <div id="patient-alerts">
+            <div class="empty-state"><div class="empty-icon">✅</div><p>No alerts</p></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/static/js/auth.js"></script>
+<script src="/static/js/health.js"></script>
+</body>
+</html>
